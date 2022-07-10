@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>Box measurement idea</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@500&display=swap" rel="stylesheet">
+		<style>
+			body{
+				margin: 0;
+				font-family: 'Source Code Pro', monospace;
+			}
+			canvas {
+				display: block;
+				width: 100%;
+				height: 100%;
+				background-image: url("box-stereo-with-seg.jpg");
+				background-size: contain;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="main"></div>
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "./three.module.js"
+				}
+			}
+		</script>
+
+		<script type="module">
+			import {
+				BoxGeometry,
+				BufferGeometry,
+				CapsuleGeometry,
+				CircleGeometry,
+				Color,
+				ConeGeometry,
+				Curve,
+				CylinderGeometry,
+				DodecahedronGeometry,
+				FrontSide,
+				ExtrudeGeometry,
+				Float32BufferAttribute,
+				Group,
+				IcosahedronGeometry,
+				LatheGeometry,
+				LineSegments,
+				LineBasicMaterial,
+				Mesh,
+				MeshPhongMaterial,
+				OctahedronGeometry,
+				PerspectiveCamera,
+				PlaneGeometry,
+				PointLight,
+				RingGeometry,
+				Scene,
+				Shape,
+				ShapeGeometry,
+				SphereGeometry,
+				TetrahedronGeometry,
+				TorusGeometry,
+				TorusKnotGeometry,
+				TubeGeometry,
+				Vector2,
+				Vector3,
+				WireframeGeometry,
+				WebGLRenderer,
+				MeshLambertMaterial,
+				LinearToneMapping
+			} from 'three';
+
+			import { GUI } from './lil-gui.module.min.js';
+			import { OrbitControls } from './OrbitControls.js';
+
+			const twoPi = Math.PI * 2;
+
+			function updateGroupGeometry( mesh, geometry ) {
+
+				mesh.children[ 0 ].geometry.dispose();
+				mesh.children[ 1 ].geometry.dispose();
+
+				mesh.children[ 0 ].geometry = new WireframeGeometry( geometry );
+				mesh.children[ 1 ].geometry = geometry;
+
+				// these do not update nicely together if shared
+			}
+
+			const guis = {
+				BoxGeometry: function ( mesh ) {
+
+					const data = {
+						width: 15,
+						height: 15,
+						depth: 15,
+						widthSegments: 1,
+						heightSegments: 1,
+						depthSegments: 1
+					};
+
+					function generateGeometry() {
+
+						updateGroupGeometry( mesh,
+							new BoxGeometry(
+								data.width, data.height, data.depth, data.widthSegments, data.heightSegments, data.depthSegments
+							)
+						);
+						render();
+
+					}
+
+					const folder = gui.addFolder( 'Box dimensions' );
+
+					folder.add( data, 'width', 1, 30 ).onChange( generateGeometry );
+					folder.add( data, 'height', 1, 30 ).onChange( generateGeometry );
+					folder.add( data, 'depth', 1, 30 ).onChange( generateGeometry );
+					generateGeometry();
+
+				}
+			};
+
+			const selectedGeometry = window.location.hash.substring( 1 );
+
+			const gui = new GUI();
+
+			const scene = new Scene();
+
+			var fov = {
+				value: 40
+			}
+
+			const imgdims = {
+				width: window.innerWidth / 2.5,
+				height: (window.innerWidth / 2.5) / 1.77777
+			}
+
+			const camera1 = new PerspectiveCamera( fov.value, imgdims.width / imgdims.height, 0.1, 10000 );
+			const camera2 = new PerspectiveCamera( fov.value, imgdims.width / imgdims.height, 0.1, 10000 );
+			camera2.position.z = 30;
+			camera2.position.x = 5;
+			camera1.position.z = 30;
+
+			const renderer = new WebGLRenderer( { antialias: false, alpha:true } );
+			renderer.setPixelRatio( window.devicePixelRatio );
+			renderer.setSize( imgdims.width*2, imgdims.height*2 );
+			document.getElementById("main").appendChild( renderer.domElement );
+			
+			//#region lights
+			const lights = [];
+			lights[ 0 ] = new PointLight( 0xffffff, 1, 0 );
+			lights[ 1 ] = new PointLight( 0xffffff, 1, 0 );
+			lights[ 2 ] = new PointLight( 0xffffff, 1, 0 );
+
+			lights[ 0 ].position.set( 0, 200, 0 );
+			lights[ 1 ].position.set( 100, 200, 100 );
+			lights[ 2 ].position.set( - 100, - 200, - 100 );
+
+			scene.add( lights[ 0 ] );
+			scene.add( lights[ 1 ] );
+			scene.add( lights[ 2 ] );
+			//#endregion
+
+			const group = new Group();
+
+			const geometry = new BufferGeometry();
+			geometry.setAttribute( 'position', new Float32BufferAttribute( [], 3 ) );
+			const meshMaterial = new MeshPhongMaterial( { 
+				color: 0x00FF00,
+				transparent: true,
+				opacity: 0.5,
+				wireframe: false
+			 } );
+
+			group.add( new LineSegments( geometry, meshMaterial ) );
+			group.add( new Mesh( geometry, meshMaterial ) );
+
+			
+			scene.add( group );
+			const folder = gui.addFolder( 'camera' );
+			folder.add( fov, 'value', 20, 160 ).onChange( renderAndUpdateCamera ).name("fov");
+			folder.add( camera2.position, 'x', 0, 10 ).step(0.01).onChange( renderAndUpdateCamera ).name("pupillary distance");
+			
+			guis[ 'BoxGeometry' ]( group );
+
+			const folder2 = gui.addFolder( 'Box rotation' );			
+			folder2.add( group.rotation, 'x', 0, twoPi ).step( 0.01 ).onChange( render );
+			folder2.add( group.rotation, 'y', 0, twoPi ).step( 0.01 ).onChange( render );
+			folder2.add( group.rotation, 'z', 0, twoPi ).step( 0.01 ).onChange( render );
+
+			const folder3 = gui.addFolder( 'Box position' );			
+			folder3.add( group.position, 'x', -50, 50 ).step( 0.01 ).onChange( render );
+			folder3.add( group.position, 'y', -50, 50 ).step( 0.01 ).onChange( render );
+			folder3.add( group.position, 'z', -50, 50 ).step( 0.01 ).onChange( render );
+
+			function renderAndUpdateCamera(){
+				render();
+				camera1.fov = fov.value;
+				camera2.fov = fov.value;
+
+				camera1.updateProjectionMatrix();
+				camera2.updateProjectionMatrix();
+			}
+
+			function render() {
+				renderer.setViewport( 0, 0, imgdims.width, imgdims.height );
+				renderer.setScissor( 0, 0, imgdims.width, imgdims.height );
+				renderer.setScissorTest( true );
+				renderer.render( scene, camera1 );
+				renderer.setViewport( imgdims.width, 0, imgdims.width, imgdims.height );
+				renderer.setScissor( imgdims.width, 0, imgdims.width, imgdims.height );
+				renderer.setScissorTest( true );
+				renderer.render( scene, camera2 );
+
+				renderer.setViewport( 0, imgdims.height, imgdims.width, imgdims.height );
+				renderer.setScissor( 0, imgdims.height, imgdims.width, imgdims.height );
+				renderer.setScissorTest( true );
+				renderer.render( scene, camera1 );
+				renderer.setViewport( imgdims.width, imgdims.height, imgdims.width, imgdims.height );
+				renderer.setScissor( imgdims.width, imgdims.height, imgdims.width, imgdims.height );
+				renderer.setScissorTest( true );
+				renderer.render( scene, camera2 );
+			}
+
+			render();
+
+		</script>
+
+		<h1>&ensp; Box measurement solution proposal</h1>
+		<p>This is an idea on how to solve box measurement with a renderer-in-loop architecture. The main hypothesis is that the
+			loss landscape should be really smooth and almost convex. We also don't need labeled data, only images + segmentations,
+			which could be provided from Deeplab for example. 
+		</p>
+		<img src="architecture.jpg" alt="" width="100%">
+		
+</body>
+</html>
