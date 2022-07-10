@@ -95,9 +95,9 @@
 				BoxGeometry: function ( mesh ) {
 
 					const data = {
-						width: 15,
-						height: 15,
-						depth: 15,
+						width: 3.277,
+						height: 7.888,
+						depth: 4.35,
 						widthSegments: 1,
 						heightSegments: 1,
 						depthSegments: 1
@@ -142,7 +142,7 @@
 			const camera1 = new PerspectiveCamera( fov.value, imgdims.width / imgdims.height, 0.1, 10000 );
 			const camera2 = new PerspectiveCamera( fov.value, imgdims.width / imgdims.height, 0.1, 10000 );
 			camera2.position.z = 30;
-			camera2.position.x = 5;
+			camera2.position.x = 2.87;
 			camera1.position.z = 30;
 
 			const renderer = new WebGLRenderer( { antialias: false, alpha:true } );
@@ -186,6 +186,10 @@
 			folder.add( camera2.position, 'x', 0, 10 ).step(0.01).onChange( renderAndUpdateCamera ).name("pupillary distance");
 			
 			guis[ 'BoxGeometry' ]( group );
+
+			// Default values for the gui guessed manually, not very precise
+			group.rotation.set(3.43, 2.34, 4.89 );
+			group.position.set( 3.29, -2, 0 );
 
 			const folder2 = gui.addFolder( 'Box rotation' );			
 			folder2.add( group.rotation, 'x', 0, twoPi ).step( 0.01 ).onChange( render );
@@ -231,11 +235,20 @@
 		</script>
 
 		<h1>&ensp; Box measurement solution proposal</h1>
-		<p>This is an idea on how to solve box measurement with a renderer-in-loop architecture. The main hypothesis is that the
+		<p>This is an idea on how to solve box measurement with a renderer-in-loop architecture. You can play with
+			the parameters in the GUI on the right yourself to get a feel for the problem. The camera parameters -
+			fov and pupillary length are not subject to optimization - these are priors that should stay constant.<br><br>
+			If you manage to get a perfect match on both cameras (its very hard!), you have solved the problem for this given view!
+			Obviously, we want to make the parameter search automatic. For that, I am proposing this architecture:
+			 </p>
+			 <img src="architecture.jpg" alt="" width="100%">
+
+			<p>
+			The main hypothesis is that the
 			loss landscape should be really smooth and almost convex.<br> We also don't need labeled data, only images + segmentations,
-			which could be provided from Deeplab for example. 
+			which could be provided from Deeplab for example. <br>
+			
 		</p>
-		<img src="architecture.jpg" alt="" width="100%">
 		
 </body>
 </html>
