@@ -18,6 +18,9 @@
 				background-image: url("box-stereo-with-seg.jpg");
 				background-size: contain;
 			}
+			p {
+				margin: 1%;
+			}
 		</style>
 	</head>
 	<body>
@@ -229,7 +232,7 @@
 
 		<h1>&ensp; Box measurement solution proposal</h1>
 		<p>This is an idea on how to solve box measurement with a renderer-in-loop architecture. The main hypothesis is that the
-			loss landscape should be really smooth and almost convex. We also don't need labeled data, only images + segmentations,
+			loss landscape should be really smooth and almost convex.<br> We also don't need labeled data, only images + segmentations,
 			which could be provided from Deeplab for example. 
 		</p>
 		<img src="architecture.jpg" alt="" width="100%">
